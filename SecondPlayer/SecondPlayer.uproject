@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{4C1BBDA3-43DE-B726-EE84-10AF1713EB25}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "SecondPlayer",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		}
+	]
+}
