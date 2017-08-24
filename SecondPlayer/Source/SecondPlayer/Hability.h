@@ -10,41 +10,37 @@
 UCLASS()
 class SECONDPLAYER_API AHability : public AActor
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
-	AHability();
-	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<AMine> MineClass;
 
 	UFUNCTION(Reliable, Server, WithValidation)
 	void DeployRPCServer();
 
 	virtual int Deploy();
 
+	virtual void ToggleVisibility(bool state);
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
-
-private:
 	FVector deployLoc= FVector();
 	FRotator deployRot= FRotator();
 	
 	bool canDeploy = false;
 	bool isOnCooldown = false;
 public:	
-	// Called every frame
+
+	UPROPERTY(EditDefaultsOnly, Category = "Info")
 	int goldCost;
-	virtual void Tick(float DeltaTime) override;
-	void InitTheRay(const FVector &direction, const FVector &startPosition);
-	FHitResult TraceTheRay(const FVector & TraceFrom, const FVector & TraceTo) const;
-	void HitTheRay(const FHitResult & Impact, const FVector & startPosition, const FVector & direction);
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Info")
 	int32 CountdownTime;
 
+	void InitTheRay(const FVector &direction, const FVector &startPosition);
+
+	FHitResult TraceTheRay(const FVector & TraceFrom, const FVector & TraceTo) const;
+
+	void HitTheRay(const FHitResult & Impact, const FVector & startPosition, const FVector & direction);
+	
 	void AdvanceTimer();
 
 	void CountdownHasFinished();

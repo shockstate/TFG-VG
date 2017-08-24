@@ -6,47 +6,24 @@
 
 
 // Sets default values
-AHability::AHability()
+AHability::AHability(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) 
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	/*static ConstructorHelpers::FObjectFinder<UBlueprint> WeaponBlueprint(TEXT("Blueprint'/Game/Blueprints/Mine.Mine'"));
-	if (WeaponBlueprint.Succeeded()) {
-		MineClass = (UClass*)WeaponBlueprint.Object->GeneratedClass;
-
-	}
-	*/
-	static ConstructorHelpers::FObjectFinder<UClass> bpClassFinder(TEXT("Class'/Game/Blueprints/Mine.Mine_C'"));
-	if (bpClassFinder.Object) {
-		MineClass = (UClass*)bpClassFinder.Object;
-
-	}
-
-	bReplicates = true;
-	bAlwaysRelevant = true;
-	bNetLoadOnClient = true;
+ 	
+	//bReplicates = true;
+	//bAlwaysRelevant = true;
+	//bNetLoadOnClient = true;
 
 
 	//deployLoc = FVector();
 	//deployRot = FRotator();
 	CountdownTime = 3;
-	goldCost = 30;
+	//goldCost = 30;
 }
 	
-// Called when the game starts or when spawned
-void AHability::BeginPlay()
+
+int AHability::Deploy()
 {
-	Super::BeginPlay();
-
-	
-	
-}
-
-// Called every frame
-void AHability::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
+	return 0;
 }
 
 void AHability::InitTheRay(const FVector &direction, const FVector &startPosition) {
@@ -81,7 +58,6 @@ void AHability::HitTheRay(const FHitResult & Impact, const FVector & startPositi
 	const FVector EndTrace = startPosition + direction * 3000.0f;
 	const FVector EndPoint = Impact.GetActor() ? Impact.ImpactPoint : EndTrace;
 
-	
 
 	//DrawDebugLine(this->GetWorld(), startPosition, EndPoint, FColor::Black, true, 10000, 10.f);
 	deployLoc = EndPoint;
@@ -124,31 +100,23 @@ void AHability::CountdownHasFinished()
 
 }
 
-int AHability::Deploy()
-{
-	if (Role < ROLE_Authority) {
-		DeployRPCServer();
-	}
-	else {
-			UWorld* const World = GetWorld();
-		if (World != NULL && canDeploy && !isOnCooldown)
-		{
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = this;
-			SpawnParams.Instigator = Instigator;
-			AMine* mine = World->SpawnActor<AMine>(MineClass, deployLoc, deployRot, SpawnParams);
-			GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AHability::AdvanceTimer, 1.0f, true);
-			isOnCooldown = true;
-			return goldCost;
-		}
-	}
-	return 0;
-}
-
 bool AHability::DeployRPCServer_Validate() {
+	//Habria que validar algo del plan tengo oro para invocarla 
 	return true;
 }
 
 void AHability::DeployRPCServer_Implementation() {
 	 Deploy();
 }
+
+void AHability::ToggleVisibility(bool state) {
+	
+}
+
+//void AHability::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+//{
+//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+//
+//	// Replicate to everyone
+//	DOREPLIFETIME(AHability, MineClass);
+//}

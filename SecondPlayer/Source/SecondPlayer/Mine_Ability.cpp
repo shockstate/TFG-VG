@@ -1,12 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SecondPlayer.h"
-#include "Mine.h"
+#include "Mine_Ability.h"
 
+AMine_Ability::AMine_Ability(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
 
-// Sets default values
-AMine::AMine()
-{
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("RootComponent"));
 	RootComponent = SphereComponent;
 	SphereComponent->InitSphereRadius(10.0f);
@@ -23,36 +21,16 @@ AMine::AMine()
 		SphereVisual->SetWorldScale3D(FVector(0.8f));
 	}
 
-	//static ConstructorHelpers::FObjectFinder<UClass> MineClassFinder(TEXT("Blueprint'/Game/Mine.Mine'"));
-	//MineClass = MineClassFinder.Object;
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
 	SphereVisual->BodyInstance.SetCollisionProfileName("Mine");
-	SphereVisual->OnComponentHit.AddDynamic(this, &AMine::OnHit);
-	//RootComponent = CollisionComp;
-	//CollisionComp->AtachPartent= RootComponent;
-	//InitialLifeSpan = 3.0f;
+	SphereVisual->OnComponentHit.AddDynamic(this, &AMine_Ability::OnHit);
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
 	bNetLoadOnClient = true;
 }
 
-// Called when the game starts or when spawned
-void AMine::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
 
-// Called every frame
-void AMine::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void AMine::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void AMine_Ability::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 
 	if (GEngine)
@@ -62,24 +40,51 @@ void AMine::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCo
 	/* Change color to yellow */
 	//DynamicMaterial->SetVectorParameterValue("BodyColor", FLinearColor::Yellow);
 	FTimerHandle UnusedHandle;
-	GetWorldTimerManager().SetTimer(
-		UnusedHandle, this, &AMine::DestroyObject, 3.0f, false);
-	
-	
+	GetWorldTimerManager().SetTimer(UnusedHandle, this, &AMine_Ability::DestroyObject, 3.0f, false);
+
 	// Only add impulse and destroy projectile if we hit a physics
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL) && OtherComp->IsSimulatingPhysics())
 	{
-		
 		//if (GEngine)
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("VEC"));
-		
-
-		
 	}
 }
-void AMine::DestroyObject() {
+
+void AMine_Ability::DestroyObject() {
 	Destroy();
 }
 
+int AMine_Ability::Deploy() {
+	//Sino soy el server llamo a la funcion del server
+	if (Role < ROLE_Authority) {
+		DeployRPCServer();
+	}
+	//Este codigo lo ejecuta el server
+	else {
+		UWorld* const World = GetWorld();
+		if (World != NULL && canDeploy && !isOnCooldown)
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+			SpawnParams.Instigator = Instigator;
+			AMine_Ability* mine = World->SpawnActor<AMine_Ability>(deployLoc, deployRot, SpawnParams);
+			GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AHability::AdvanceTimer, 1.0f, true);
+			isOnCooldown = true;
+			return goldCost;
+		}
+	}
+	return 0;
+}
 
+void AMine_Ability::ToggleVisibility(bool state) {
+	//TArray<UStaticMeshComponent*> Components;
+	//GetComponents<UStaticMeshComponent>(Components);
+	//for (int32 i = 0; i<Components.Num(); i++)
+	//{
+	//	UStaticMeshComponent* StaticMeshComponent = Components[i];
+	//	//UStaticMesh* StaticMesh = StaticMeshComponent->StaticMesh;
+	//	StaticMeshComponent->SetVisibility(state);
+	//	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//}
+}
 

@@ -15,41 +15,61 @@ class SECONDPLAYER_API APawnCamera : public ADefaultPawn
 {
 	GENERATED_UCLASS_BODY()
 		
-	AHability *activeAbility;
+	class AHability *activeAbility;
 	/*UAbilitySystemComponent* GetAbilitySystemComponent() const override //We add this function, overriding it from IAbilitySystemInterface.
 	{
 		return AbilitySystem;
 	};*/
+
+	/** spawn abilities, setup initial variables */
+	virtual void PostInitializeComponents() override;
+
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
-
-	UPROPERTY(VisibleAnywhere, Category = Spawn, Replicated)
-	TSubclassOf<class AHability> AbilitySpawn;
-
 
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Abilities)
 		TSubclassOf<class UGameplayAbility> Ability;*/
 
 	void Fire();
 
+	/**
+	* [server] add ability to inventory
+	*
+	* @param Weapon	Weapon to add.
+	*/
+	void AddAbility(class AHability* Ability);
+protected:
+
+	/** [server] spawns default abilities */
+	void SpawnDefaultAbilities();
+
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerFire();
+
+	
 private:
 	FVector direction;
 	float timerGoldPerSecond;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-		int32 totalGold;
+	int32 totalGold;
 
 	/** Our ability system */
 	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Abilities, meta = (AllowPrivateAccess = "true"))
 		class UAbilitySystemComponent* AbilitySystem;
 		*/
 	UFUNCTION(BlueprintCallable, Category = Setup)
-		int getTotalGold();
+	int getTotalGold();
 
-
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = Abilities)
+	TArray<TSubclassOf<class AHability> > DefaultAbilities;
 	
+	UPROPERTY(Transient, Replicated)
+	TArray <class AHability*> Abilities;
+
 };
 
 /*UENUM(BlueprintType)
