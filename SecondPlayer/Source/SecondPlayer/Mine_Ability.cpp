@@ -68,6 +68,8 @@ int AMine_Ability::Deploy() {
 			SpawnParams.Owner = this;
 			SpawnParams.Instigator = Instigator;
 			AMine_Ability* mine = World->SpawnActor<AMine_Ability>(deployLoc, deployRot, SpawnParams);
+			//AMine_Ability* mine = World->SpawnActor<AMine_Ability>(FVector(-210.0f, 105.0f, 100.0f), deployRot, SpawnParams);
+			
 			GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AHability::AdvanceTimer, 1.0f, true);
 			isOnCooldown = true;
 			return goldCost;
@@ -87,4 +89,16 @@ void AMine_Ability::ToggleVisibility(bool state) {
 	//	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//}
 }
-
+//
+//void AMine_Ability::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+//{
+//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+//
+//	//Only to local owner
+//	//DOREPLIFETIME_CONDITION(APawnCamera, Abilities, COND_OwnerOnly);
+//
+//	// Replicate to everyone
+//	DOREPLIFETIME(AMine_Ability, deployLoc);
+//	//DOREPLIFETIME(APawnCamera, AbilitySpawn);
+//}
+//

@@ -115,11 +115,29 @@ void APawnCamera::Tick(float DeltaTime)
 		timerGoldPerSecond = 0.0f;
 	}
 	Super::Tick(DeltaTime);
-	const FRotator rotation = GetViewRotation();
-	direction = FRotationMatrix(rotation).GetScaledAxis(EAxis::X);
-	if (activeAbility)
-		activeAbility->InitTheRay(direction, GetMeshComponent()->GetComponentLocation());
+	SendRayTrace();
 	
+	
+}
+
+void APawnCamera::SendRayTrace() {
+	if (Role < ROLE_Authority) {
+		ServerSendRayTrace();
+	}
+	else {
+		const FRotator rotation = GetViewRotation();
+		direction = FRotationMatrix(rotation).GetScaledAxis(EAxis::X);
+		if (activeAbility)
+			activeAbility->InitTheRay(direction, GetMeshComponent()->GetComponentLocation(), this);
+	}
+}
+
+bool APawnCamera::ServerSendRayTrace_Validate() {
+	return true;
+}
+
+void APawnCamera::ServerSendRayTrace_Implementation() {
+	SendRayTrace();
 }
 
 void APawnCamera::SetupPlayerInputComponent(class UInputComponent* InInputComponent) {
@@ -173,6 +191,7 @@ void APawnCamera::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLi
 
 	// Replicate to everyone
 	DOREPLIFETIME(APawnCamera, totalGold);
+	DOREPLIFETIME(APawnCamera, direction);
 	//DOREPLIFETIME(APawnCamera, AbilitySpawn);
 }
 

@@ -26,11 +26,11 @@ int AHability::Deploy()
 	return 0;
 }
 
-void AHability::InitTheRay(const FVector &direction, const FVector &startPosition) {
+void AHability::InitTheRay(const FVector &direction, const FVector &startPosition,class APawnCamera *pawnPlayer) {
 
 	const FVector EndTrace = startPosition + direction * 3000.0f;
+	ActorToIgnore = pawnPlayer;
 	const FHitResult Impact = TraceTheRay(startPosition, EndTrace);
-
 	HitTheRay(Impact, startPosition, direction);
 }
 
@@ -38,10 +38,10 @@ void AHability::InitTheRay(const FVector &direction, const FVector &startPositio
 FHitResult AHability::TraceTheRay(const FVector &TraceFrom, const FVector &TraceTo) const
 {
 	static FName WeaponFireTag = FName(TEXT("Vision"));
-	FCollisionQueryParams TraceParams(WeaponFireTag, true, Instigator);
+	FCollisionQueryParams TraceParams(WeaponFireTag, true, ActorToIgnore);
 	TraceParams.bTraceAsyncScene = true;
 	TraceParams.bReturnPhysicalMaterial = true;
-	TraceParams.AddIgnoredActor(this);
+	TraceParams.AddIgnoredActor(ActorToIgnore);
 	FHitResult Hit(ForceInit);
 		
 		 GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECC_GameTraceChannel1, TraceParams);
@@ -61,6 +61,7 @@ void AHability::HitTheRay(const FHitResult & Impact, const FVector & startPositi
 
 	//DrawDebugLine(this->GetWorld(), startPosition, EndPoint, FColor::Black, true, 10000, 10.f);
 	deployLoc = EndPoint;
+	
 	if (Impact.GetActor()) {
 		float thickness = 5.0f;
 		
@@ -113,10 +114,12 @@ void AHability::ToggleVisibility(bool state) {
 	
 }
 
-//void AHability::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-//{
-//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-//
-//	// Replicate to everyone
-//	DOREPLIFETIME(AHability, MineClass);
-//}
+void AHability::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Replicate to everyone
+	//DOREPLIFETIME(AHability, MineClass);
+	DOREPLIFETIME(AHability, deployLoc);
+
+}

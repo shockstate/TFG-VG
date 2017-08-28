@@ -32,6 +32,7 @@ class SECONDPLAYER_API APawnCamera : public ADefaultPawn
 		TSubclassOf<class UGameplayAbility> Ability;*/
 
 	void Fire();
+	void SendRayTrace();
 
 	/**
 	* [server] add ability to inventory
@@ -47,9 +48,13 @@ protected:
 	UFUNCTION(reliable, server, WithValidation)
 	void ServerFire();
 
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerSendRayTrace();
 	
 private:
+	UPROPERTY(Transient, Replicated)
 	FVector direction;
+
 	float timerGoldPerSecond;
 
 public:

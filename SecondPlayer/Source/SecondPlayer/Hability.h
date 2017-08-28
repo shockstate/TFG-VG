@@ -22,9 +22,11 @@ public:
 	virtual void ToggleVisibility(bool state);
 
 protected:
+	UPROPERTY(Transient, Replicated)
 	FVector deployLoc= FVector();
+
 	FRotator deployRot= FRotator();
-	
+	AActor* ActorToIgnore;
 	bool canDeploy = false;
 	bool isOnCooldown = false;
 public:	
@@ -35,7 +37,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Info")
 	int32 CountdownTime;
 
-	void InitTheRay(const FVector &direction, const FVector &startPosition);
+	void InitTheRay(const FVector &direction, const FVector &startPosition, class APawnCamera *pawnPlayer);
 
 	FHitResult TraceTheRay(const FVector & TraceFrom, const FVector & TraceTo) const;
 
