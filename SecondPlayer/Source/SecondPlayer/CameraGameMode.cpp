@@ -6,7 +6,7 @@
 
 ACameraGameMode::ACameraGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
 	
-	static ConstructorHelpers::FClassFinder<APawn> SecondPlayer(TEXT("/Game/Blueprints/BP_PawnCamera"));
+	static ConstructorHelpers::FClassFinder<ACharacter> SecondPlayer(TEXT("/Game/Blueprints/Player/BP_GodCharacter"));
 	if (SecondPlayer.Succeeded()) 
 		DefaultPawnClass = SecondPlayer.Class;
 
