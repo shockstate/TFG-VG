@@ -37,7 +37,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Info")
 	int32 CountdownTime;
 
-	void InitTheRay(const FVector &direction, const FVector &startPosition, class APawnCamera *pawnPlayer);
+	void InitTheRay(const FVector &direction, const FVector &startPosition, class AGodCharacter *pawnPlayer);
 
 	FHitResult TraceTheRay(const FVector & TraceFrom, const FVector & TraceTo) const;
 

@@ -35,16 +35,39 @@ AGodCharacter::AGodCharacter()
 	Mesh1P->CastShadow = false;
 	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
 	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
-	MovementComponent = CreateDefaultSubobject<UPawnMovementComponent, UFloatingPawnMovement>(ADefaultPawn::MovementComponentName);
-	MovementComponent->UpdatedComponent = CollisionComponent;
+	//MovementComponent = CreateDefaultSubobject<UPawnMovementComponent, UFloatingPawnMovement>(ADefaultPawn::MovementComponentName);
+	//MovementComponent->UpdatedComponent = CollisionComponent;
+
+
+	timerGoldPerSecond = 0.0f;
+	totalGold = 200;
 }
 
-UPawnMovementComponent* AGodCharacter::GetMovementComponent() const
+
+
+/*UPawnMovementComponent* AGodCharacter::GetMovementComponent() const
 {
-	return MovementComponent;
+	return CharacterMovement;
+}*/
+
+/*
+void AGodCharacter::SetReplicateMovement(bool bInReplicateMovement)
+{
+	Super::SetReplicateMovement(bInReplicateMovement);
+
+	if (MovementComponent != nullptr && Role == ROLE_Authority)
+	{
+		// Set prediction data time stamp to current time to stop extrapolating
+		// from time bReplicateMovement was turned off to when it was turned on again
+		FNetworkPredictionData_Server* NetworkPrediction = MovementComponent->HasPredictionData_Server() ? MovementComponent->GetPredictionData_Server() : nullptr;
+
+		if (NetworkPrediction != nullptr)
+		{
+			NetworkPrediction->ServerTimeStamp = GetWorld()->GetTimeSeconds();
+		}
+	}
 }
-
-
+*/
 void AGodCharacter::BeginPlay()
 {
 	// Call the base class  
@@ -60,10 +83,11 @@ void AGodCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 	// set up gameplay key bindings
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAxis("MoveUP", this, &AGodCharacter::MoveUp);
+	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AGodCharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AGodCharacter::OnFire);
+	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AGodCharacter::OnFire);
+	PlayerInputComponent->BindAction("Spell", IE_Pressed, this, &AGodCharacter::Fire);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGodCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGodCharacter::MoveRight);
@@ -125,12 +149,30 @@ void AGodCharacter::OnFire()
 	//}
 }
 
+
+void AGodCharacter::MoveUp(float Value) {
+
+
+	if (Value != 0.f)
+	{
+		AddMovementInput(FVector::UpVector, Value);
+	}
+
+}
+
 void AGodCharacter::MoveForward(float Value)
 {
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
-		AddMovementInput(GetActorForwardVector(), Value);
+		//AddMovementInput(GetActorForwardVector(), Value);
+
+		FRotator const ControlSpaceRot = Controller->GetControlRotation();
+
+		// transform to world space and add it
+		AddMovementInput(FRotationMatrix(ControlSpaceRot).GetScaledAxis(EAxis::X), Value);
+
+
 	}
 }
 
@@ -155,3 +197,125 @@ void AGodCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+void AGodCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (Role == ROLE_Authority)
+	{
+		SpawnDefaultAbilities();
+		activeAbility = Abilities[0];
+	}
+}
+
+void AGodCharacter::SpawnDefaultAbilities() {
+	if (Role < ROLE_Authority)
+	{
+		return;
+	}
+
+	int32 NumAbilitiesClasses = DefaultAbilities.Num();
+	for (int32 i = 0; i < NumAbilitiesClasses; i++)
+	{
+		if (DefaultAbilities[i])
+		{
+			FActorSpawnParameters SpawnInfo;
+			SpawnInfo.Owner = this;
+			SpawnInfo.Instigator = Instigator;
+			SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			AHability* NewHability = GetWorld()->SpawnActor<AHability>(DefaultAbilities[i], SpawnInfo);
+			NewHability->ToggleVisibility(false);
+			AddAbility(NewHability);
+		}
+	}
+
+	// equip first ability in inventory
+	//if (Abilities.Num() > 0)
+	//{
+	//	EquipWeapon(Inventory[0]);
+	//}
+}
+
+void AGodCharacter::AddAbility(AHability* Ability) {
+	if (Ability && Role == ROLE_Authority)
+	{
+		Abilities.AddUnique(Ability);
+	}
+}
+
+void AGodCharacter::Tick(float DeltaTime)
+{
+	timerGoldPerSecond += DeltaTime;
+	if (timerGoldPerSecond > 5.0f) {
+		totalGold += 10;
+		timerGoldPerSecond = 0.0f;
+	}
+	Super::Tick(DeltaTime);
+	SendRayTrace();
+
+
+}
+
+void AGodCharacter::SendRayTrace() {
+	if (Role < ROLE_Authority) {
+		ServerSendRayTrace();
+	}
+	else {
+		const FRotator rotation = GetViewRotation();
+		direction = FRotationMatrix(rotation).GetScaledAxis(EAxis::X);
+		if (activeAbility)
+			activeAbility->InitTheRay(direction, GetActorLocation(), this);
+	}
+}
+
+bool AGodCharacter::ServerSendRayTrace_Validate() {
+	return true;
+}
+
+void AGodCharacter::ServerSendRayTrace_Implementation() {
+	SendRayTrace();
+}
+
+void AGodCharacter::Fire() {
+	if (Role < ROLE_Authority) {
+		ServerFire();
+	}
+	else {
+		if (activeAbility) {
+			if (totalGold > activeAbility->goldCost) {
+				int goldSpent = activeAbility->Deploy();
+				totalGold = totalGold - goldSpent;
+			}
+		}
+		else {
+			UE_LOG(LogTemp, Error, TEXT("Something went wrong trying to fire!"));
+		}
+
+	}
+
+}
+
+bool AGodCharacter::ServerFire_Validate() {
+	return true;
+}
+
+void AGodCharacter::ServerFire_Implementation() {
+	Fire();
+}
+
+int AGodCharacter::getTotalGold() {
+	return totalGold;
+}
+
+void AGodCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//Only to local owner
+	DOREPLIFETIME_CONDITION(AGodCharacter, Abilities, COND_OwnerOnly);
+
+	// Replicate to everyone
+	DOREPLIFETIME(AGodCharacter, totalGold);
+	DOREPLIFETIME(AGodCharacter, direction);
+	//DOREPLIFETIME(APawnCamera, AbilitySpawn);
+}

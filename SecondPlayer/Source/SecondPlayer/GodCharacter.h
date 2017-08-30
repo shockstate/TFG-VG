@@ -1,6 +1,7 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "GameFramework/Character.h"
+#include "Hability.h"
 #include "GodCharacter.generated.h"
 
 class UInputComponent;
@@ -34,16 +35,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 	
-	virtual UPawnMovementComponent* GetMovementComponent() const override;
+	//virtual UPawnMovementComponent* GetMovementComponent() const override;
 
 public:
 	/** Name of the MovementComponent.  Use this name if you want to use a different class (with ObjectInitializer.SetDefaultSubobjectClass). */
-	static FName MovementComponentName;
+	//static FName MovementComponentName;
 
 private:
 	/** DefaultPawn movement component */
-	UPROPERTY(Category = Pawn, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		UPawnMovementComponent* MovementComponent;
+	//UPROPERTY(Category = Pawn, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		//UPawnMovementComponent* MovementComponent;
 
 public:
 	/** Name of the CollisionComponent. */
@@ -65,6 +66,8 @@ protected:
 	/** Handles stafing movement, left and right */
 	void MoveRight(float Val);
 
+	void MoveUp(float Val);
+
 	/**
 	 * Called via input to turn at a given rate.
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
@@ -80,7 +83,6 @@ protected:
 	
 protected:
 	// APawn interface
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
 
 public:
@@ -89,5 +91,65 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+	class AHability *activeAbility;
+	/*UAbilitySystemComponent* GetAbilitySystemComponent() const override //We add this function, overriding it from IAbilitySystemInterface.
+	{
+	return AbilitySystem;
+	};*/
+
+	/** spawn abilities, setup initial variables */
+	virtual void PostInitializeComponents() override;
+
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
+
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Abilities)
+	TSubclassOf<class UGameplayAbility> Ability;*/
+
+	void Fire();
+	void SendRayTrace();
+
+	/**
+	* [server] add ability to inventory
+	*
+	* @param Weapon	Weapon to add.
+	*/
+	void AddAbility(class AHability* Ability);
+protected:
+
+	/** [server] spawns default abilities */
+	void SpawnDefaultAbilities();
+
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerFire();
+
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerSendRayTrace();
+
+private:
+	UPROPERTY(Transient, Replicated)
+		FVector direction;
+
+	float timerGoldPerSecond;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+		int32 totalGold;
+
+	/** Our ability system */
+	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Abilities, meta = (AllowPrivateAccess = "true"))
+	class UAbilitySystemComponent* AbilitySystem;
+	*/
+	UFUNCTION(BlueprintCallable, Category = Setup)
+		int getTotalGold();
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = Abilities)
+		TArray<TSubclassOf<class AHability> > DefaultAbilities;
+
+	UPROPERTY(Transient, Replicated)
+		TArray <class AHability*> Abilities;
+
 };
+
 

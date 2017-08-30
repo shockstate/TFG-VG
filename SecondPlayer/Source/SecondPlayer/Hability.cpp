@@ -26,11 +26,10 @@ int AHability::Deploy()
 	return 0;
 }
 
-void AHability::InitTheRay(const FVector &direction, const FVector &startPosition,class APawnCamera *pawnPlayer) {
+void AHability::InitTheRay(const FVector &direction, const FVector &startPosition,class AGodCharacter *pawnPlayer) {
 
 	const FVector EndTrace = startPosition + direction * 3000.0f;
-	ActorToIgnore = pawnPlayer;
-	const FHitResult Impact = TraceTheRay(startPosition, EndTrace);
+	const FHitResult Impact = TraceTheRay(startPosition+direction * 100.0f, EndTrace);
 	HitTheRay(Impact, startPosition, direction);
 }
 
@@ -41,7 +40,7 @@ FHitResult AHability::TraceTheRay(const FVector &TraceFrom, const FVector &Trace
 	FCollisionQueryParams TraceParams(WeaponFireTag, true, ActorToIgnore);
 	TraceParams.bTraceAsyncScene = true;
 	TraceParams.bReturnPhysicalMaterial = true;
-	TraceParams.AddIgnoredActor(ActorToIgnore);
+	//TraceParams.AddIgnoredActor(const_cast<AActor*>(Cast<AActor>(*pawnPlayer)));
 	FHitResult Hit(ForceInit);
 		
 		 GetWorld()->LineTraceSingleByChannel(Hit, TraceFrom, TraceTo, ECC_GameTraceChannel1, TraceParams);

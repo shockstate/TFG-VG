@@ -127,8 +127,8 @@ void APawnCamera::SendRayTrace() {
 	else {
 		const FRotator rotation = GetViewRotation();
 		direction = FRotationMatrix(rotation).GetScaledAxis(EAxis::X);
-		if (activeAbility)
-			activeAbility->InitTheRay(direction, GetMeshComponent()->GetComponentLocation(), this);
+		/*if (activeAbility)
+			activeAbility->InitTheRay(direction, GetMeshComponent()->GetComponentLocation(), this);*/
 	}
 }
 
